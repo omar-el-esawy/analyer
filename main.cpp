@@ -2,28 +2,30 @@
 
 using namespace std;
 #define MAX_TOKEN_LEN 40
-bool Equals(const char* a, const char* b)
-{
-    return strcmp(a, b)==0;
+
+bool Equals(const char *a, const char *b) {
+    return strcmp(a, b) == 0;
 }
 
-bool StartsWith(const char* a, const char* b)
-{
-    int nb=strlen(b);
-    return strncmp(a, b, nb)==0;
+bool StartsWith(const char *a, const char *b) {
+    int nb = strlen(b);
+    return strncmp(a, b, nb) == 0;
 }
 
-void Copy(char* a, const char* b, int n=0)
-{
-    if(n>0) {strncpy(a, b, n); a[n]=0;}
-    else strcpy(a, b);
+void Copy(char *a, const char *b, int n = 0) {
+    if (n > 0) {
+        strncpy(a, b, n);
+        a[n] = 0;
+    } else strcpy(a, b);
 }
 
-void AllocateAndCopy(char** a, const char* b)
-{
-    if(b==0) {*a=0; return;}
-    int n=strlen(b);
-    *a=new char[n+1];
+void AllocateAndCopy(char **a, const char *b) {
+    if (b == 0) {
+        *a = 0;
+        return;
+    }
+    int n = strlen(b);
+    *a = new char[n + 1];
     strcpy(*a, b);
 }
 
@@ -32,37 +34,41 @@ void AllocateAndCopy(char** a, const char* b)
 
 #define MAX_LINE_LENGTH 10000
 
-struct InFile
-{
-    FILE* file;
+struct InFile {
+    FILE *file;
     int cur_line_num;
 
     char line_buf[MAX_LINE_LENGTH];
     int cur_ind, cur_line_size;
 
-    InFile(const char* str) {file=0; if(str) file=fopen(str, "r"); cur_line_size=0; cur_ind=0; cur_line_num=0;}
-    ~InFile(){if(file) fclose(file);}
+    InFile(const char *str) {
+        file = 0;
+        if (str) file = fopen(str, "r");
+        cur_line_size = 0;
+        cur_ind = 0;
+        cur_line_num = 0;
+    }
 
-    void SkipSpaces()
-    {
-        while(cur_ind<cur_line_size)
-        {
-            char ch=line_buf[cur_ind];
-            if(ch!=' ' && ch!='\t' && ch!='\r' && ch!='\n') break;
+    ~InFile() { if (file) fclose(file); }
+
+    void SkipSpaces() {
+        while (cur_ind < cur_line_size) {
+            char ch = line_buf[cur_ind];
+            if (ch != ' ' && ch != '\t' && ch != '\r' && ch != '\n') break;
             cur_ind++;
         }
     }
 
-    bool SkipUpto(const char* str)
-    {
-        while(true)
-        {
+    bool SkipUpto(const char *str) {
+        while (true) {
             SkipSpaces();
-            while(cur_ind>=cur_line_size) {if(!GetNewLine()) return false; SkipSpaces();}
+            while (cur_ind >= cur_line_size) {
+                if (!GetNewLine()) return false;
+                SkipSpaces();
+            }
 
-            if(StartsWith(&line_buf[cur_ind], str))
-            {
-                cur_ind+=strlen(str);
+            if (StartsWith(&line_buf[cur_ind], str)) {
+                cur_ind += strlen(str);
                 return true;
             }
             cur_ind++;
@@ -70,53 +76,56 @@ struct InFile
         return false;
     }
 
-    bool GetNewLine()
-    {
-        cur_ind=0; line_buf[0]=0;
-        if(!fgets(line_buf, MAX_LINE_LENGTH, file)) return false;
-        cur_line_size=strlen(line_buf);
-        if(cur_line_size==0) return false; // End of file
+    bool GetNewLine() {
+        cur_ind = 0;
+        line_buf[0] = 0;
+        if (!fgets(line_buf, MAX_LINE_LENGTH, file)) return false;
+        cur_line_size = strlen(line_buf);
+        if (cur_line_size == 0) return false; // End of file
         cur_line_num++;
         return true;
     }
 
-    char* GetNextTokenStr()
-    {
+    char *GetNextTokenStr() {
         SkipSpaces();
-        while(cur_ind>=cur_line_size) {if(!GetNewLine()) return 0; SkipSpaces();}
+        while (cur_ind >= cur_line_size) {
+            if (!GetNewLine()) return 0;
+            SkipSpaces();
+        }
         return &line_buf[cur_ind];
     }
 
-    void Advance(int num)
-    {
-        cur_ind+=num;
+    void Advance(int num) {
+        cur_ind += num;
     }
 };
 
-struct OutFile
-{
-    FILE* file;
-    OutFile(const char* str) {file=0; if(str) file=fopen(str, "w");}
-    ~OutFile(){if(file) fclose(file);}
+struct OutFile {
+    FILE *file;
 
-    void Out(const char* s)
-    {
-        fprintf(file, "%s\n", s); fflush(file);
+    OutFile(const char *str) {
+        file = 0;
+        if (str) file = fopen(str, "w");
+    }
+
+    ~OutFile() { if (file) fclose(file); }
+
+    void Out(const char *s) {
+        fprintf(file, "%s\n", s);
+        fflush(file);
     }
 };
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Compiler Parameters /////////////////////////////////////////////////////////////
 
-struct CompilerInfo
-{
+struct CompilerInfo {
     InFile in_file;
     OutFile out_file;
     OutFile debug_file;
 
-    CompilerInfo(const char* in_str, const char* out_str, const char* debug_str)
-            : in_file(in_str), out_file(out_str), debug_file(debug_str)
-    {
+    CompilerInfo(const char *in_str, const char *out_str, const char *debug_str)
+            : in_file(in_str), out_file(out_str), debug_file(debug_str) {
     }
 };
 
@@ -125,7 +134,7 @@ struct CompilerInfo
 
 #define MAX_TOKEN_LEN 40
 
-enum TokenType{
+enum TokenType {
     IF, THEN, ELSE, END, REPEAT, UNTIL, READ, WRITE,
     ASSIGN, EQUAL, LESS_THAN,
     PLUS, MINUS, TIMES, DIVIDE, POWER,
@@ -137,7 +146,7 @@ enum TokenType{
 };
 
 // Used for debugging only /////////////////////////////////////////////////////////
-const char* TokenTypeStr[]=
+const char *TokenTypeStr[] =
         {
                 "If", "Then", "Else", "End", "Repeat", "Until", "Read", "Write",
                 "Assign", "Equal", "LessThan",
@@ -149,16 +158,22 @@ const char* TokenTypeStr[]=
                 "EndFile", "Error"
         };
 
-struct Token
-{
+struct Token {
     TokenType type;
-    char str[MAX_TOKEN_LEN+1];
+    char str[MAX_TOKEN_LEN + 1];
 
-    Token(){str[0]=0; type=ERROR;}
-    Token(TokenType _type, const char* _str) {type=_type; Copy(str, _str);}
+    Token() {
+        str[0] = 0;
+        type = ERROR;
+    }
+
+    Token(TokenType _type, const char *_str) {
+        type = _type;
+        Copy(str, _str);
+    }
 };
 
-const Token reserved_words[]=
+const Token reserved_words[] =
         {
                 Token(IF, "if"),
                 Token(THEN, "then"),
@@ -169,11 +184,11 @@ const Token reserved_words[]=
                 Token(READ, "read"),
                 Token(WRITE, "write")
         };
-const int num_reserved_words=sizeof(reserved_words)/sizeof(reserved_words[0]);
+const int num_reserved_words = sizeof(reserved_words) / sizeof(reserved_words[0]);
 
 // if there is tokens like < <=, sort them such that sub-tokens come last: <= <
 // the closing comment should come immediately after opening comment
-const Token symbolic_tokens[]=
+const Token symbolic_tokens[] =
         {
                 Token(ASSIGN, ":="),
                 Token(EQUAL, "="),
@@ -189,92 +204,212 @@ const Token symbolic_tokens[]=
                 Token(LEFT_BRACE, "{"),
                 Token(RIGHT_BRACE, "}")
         };
-const int num_symbolic_tokens=sizeof(symbolic_tokens)/sizeof(symbolic_tokens[0]);
+const int num_symbolic_tokens = sizeof(symbolic_tokens) / sizeof(symbolic_tokens[0]);
 
-inline bool IsDigit(char ch){return (ch>='0' && ch<='9');}
-inline bool IsLetter(char ch){return ((ch>='a' && ch<='z') || (ch>='A' && ch<='Z'));}
-inline bool IsLetterOrUnderscore(char ch){return (IsLetter(ch) || ch=='_');}
+inline bool IsDigit(char ch) { return (ch >= '0' && ch <= '9'); }
 
-void GetNextToken(CompilerInfo* pci, Token* ptoken)
-{
-    ptoken->type=ERROR;
-    ptoken->str[0]=0;
+inline bool IsLetter(char ch) { return ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')); }
+
+inline bool IsLetterOrUnderscore(char ch) { return (IsLetter(ch) || ch == '_'); }
+
+
+enum NodeKind {
+    IF_NODE, REPEAT_NODE, ASSIGN_NODE, READ_NODE, WRITE_NODE,
+    OPER_NODE, NUM_NODE, ID_NODE
+};
+
+void GetNextToken(CompilerInfo *pci, Token *ptoken) {
+    ptoken->type = ERROR;
+    ptoken->str[0] = 0;
 
     int i;
-    char* s=pci->in_file.GetNextTokenStr();
-    if(!s)
-    {
-        ptoken->type=ENDFILE;
-        ptoken->str[0]=0;
+    char *s = pci->in_file.GetNextTokenStr();
+    if (!s) {
+        ptoken->type = ENDFILE;
+        ptoken->str[0] = 0;
         return;
     }
 
-    for(i=0;i<num_symbolic_tokens;i++)
-    {
-        if(StartsWith(s, symbolic_tokens[i].str))
+    for (i = 0; i < num_symbolic_tokens; i++) {
+        if (StartsWith(s, symbolic_tokens[i].str))
             break;
     }
 
-    if(i<num_symbolic_tokens)
-    {
-        if(symbolic_tokens[i].type==LEFT_BRACE)
-        {
+    if (i < num_symbolic_tokens) {
+        if (symbolic_tokens[i].type == LEFT_BRACE) {
             pci->in_file.Advance(strlen(symbolic_tokens[i].str));
-            if(!pci->in_file.SkipUpto(symbolic_tokens[i+1].str)) return;
+            if (!pci->in_file.SkipUpto(symbolic_tokens[i + 1].str)) return;
             return GetNextToken(pci, ptoken);
         }
-        ptoken->type=symbolic_tokens[i].type;
+        ptoken->type = symbolic_tokens[i].type;
         Copy(ptoken->str, symbolic_tokens[i].str);
-    }
-    else if(IsDigit(s[0]))
-    {
-        int j=1;
-        while(IsDigit(s[j])) j++;
+    } else if (IsDigit(s[0])) {
+        int j = 1;
+        while (IsDigit(s[j])) j++;
 
-        ptoken->type=NUM;
+        ptoken->type = NUM;
         Copy(ptoken->str, s, j);
-    }
-    else if(IsLetterOrUnderscore(s[0]))
-    {
-        int j=1;
-        while(IsLetterOrUnderscore(s[j])) j++;
+    } else if (IsLetterOrUnderscore(s[0])) {
+        int j = 1;
+        while (IsLetterOrUnderscore(s[j])) j++;
 
-        ptoken->type=ID;
+        ptoken->type = ID;
         Copy(ptoken->str, s, j);
 
-        for(i=0;i<num_reserved_words;i++)
-        {
-            if(Equals(ptoken->str, reserved_words[i].str))
-            {
-                ptoken->type=reserved_words[i].type;
+        for (i = 0; i < num_reserved_words; i++) {
+            if (Equals(ptoken->str, reserved_words[i].str)) {
+                ptoken->type = reserved_words[i].type;
                 break;
             }
         }
     }
 
-    int len=strlen(ptoken->str);
-    if(len>0) pci->in_file.Advance(len);
+    int len = strlen(ptoken->str);
+    if (len > 0) pci->in_file.Advance(len);
 }
 
 struct Node {
     string s;
+    NodeKind node_kind;
     vector<Node *> neighbours;
 
-    Node(string s) : s(s) {}
+    Node(string s = "") : s(s) {}
 };
 
-Node *stmnt() {
+Node *stmtseqFun(CompilerInfo *compInfo, Token *next_token);
+
+Node *readstmtFun(CompilerInfo *compInfo, Token *next_token) {
+
+    Node *node = new Node;
+
+    if (next_token->type == READ) {
+        GetNextToken(compInfo, next_token);
+    }
+
+    if (next_token->type == ID) {
+        node->s = next_token->str;
+        GetNextToken(compInfo, next_token);
+    }
+
+    node->node_kind = READ_NODE;
+    return node;
+}
+
+Node *writestmtFun(CompilerInfo *compInfo, Token *next_token) {
+
+    Node *node = new Node;
+
+    // Check first part "write" in "write expr"
+    if (next_token->type == WRITE) {
+        GetNextToken(compInfo, next_token);
+    }
+//    node->neighbours.push_back(exprFun(compInfo, next_token));
+
+
+    node->node_kind = WRITE_NODE;
+    return node;
+}
+
+Node *repeatstmtFun(CompilerInfo *pci, Token *next_token) {
+
+    Node *node = new Node;
+
+    //Check first part  "repeat"  in repeat stmtseq until expr
+    if (next_token->type == REPEAT) {
+        GetNextToken(pci, next_token);
+    }
+
+    node->neighbours.push_back(stmtseqFun(pci, next_token));
+    if (next_token->type == UNTIL) {
+        GetNextToken(pci, next_token);
+    }
+
+//    node->neighbours.push_back(exprFun(pci, next_token));
+    // Make type of node in subTree is REPEAT_NODE
+    node->node_kind = REPEAT_NODE;
+    return node;
+}
+
+Node *assignstmtFun(CompilerInfo *compInfo, Token *next_token) {
+
+    Node *node = new Node;
+    if (next_token->type == ID) {
+        node->s = next_token->str;
+        GetNextToken(compInfo, next_token);
+    }
+    if (next_token->type == ASSIGN) {
+        GetNextToken(compInfo, next_token);
+    }
+//    node->neighbours.push_back(exprFun(compInfo, next_token));
+
+    node->node_kind = ASSIGN_NODE;
+    return node;
+}
+
+
+Node *ifstmtFun(CompilerInfo *compInfo, Token *next_token) {
+    Node *node = new Node;
+
+    if (next_token->type == IF) {
+        GetNextToken(compInfo, next_token);
+    }
+
+//    node->neighbours.push_back(exprFun(compInfo, next_token));
+
+    if (next_token->type == THEN) {
+        GetNextToken(compInfo, next_token);
+    }
+
+    node->neighbours.push_back(stmtseqFun(compInfo, next_token));
+
+    if (next_token->type == ELSE) {
+        GetNextToken(compInfo, next_token);
+
+        node->neighbours.push_back(stmtseqFun(compInfo, next_token));
+    }
+
+    if (next_token->type == END) {
+        GetNextToken(compInfo, next_token);
+    }
+
+    node->node_kind = IF_NODE;
+    return node;
+}
+
+Node *stmtFun(CompilerInfo *compInfo, Token *next_token) {
+
+    Node *node = nullptr;
+
+    if (next_token->type == IF) node = ifstmtFun(compInfo, next_token);
+
+    else if (next_token->type == ID) node = assignstmtFun(compInfo, next_token);
+
+    else if (next_token->type == REPEAT) node = repeatstmtFun(compInfo, next_token);
+
+    else if (next_token->type == WRITE) node = writestmtFun(compInfo, next_token);
+
+    else if (next_token->type == READ) node = readstmtFun(compInfo, next_token);
+
+    return node;
+}
+
+Node *stmtseqFun(CompilerInfo *compInfo, Token *next_token) {
 
     Node *node;
+    node->neighbours.push_back(stmtFun(compInfo, next_token));
 
+    while (!(next_token->type == ENDFILE || next_token->type == ELSE ||
+             next_token->type == UNTIL || next_token->type == END)) {
+        if (next_token->type == SEMI_COLON) {
+            GetNextToken(compInfo, next_token);
+        }
 
+        node->neighbours.push_back(stmtFun(compInfo, next_token));
+
+    }
+    return node;
 }
 
-void stamntSeq(Node *node) {
-
-    node->neighbours.push_back(stmnt());
-
-}
 
 int main() {
     ios_base::sync_with_stdio(0), cin.tie(0), cout.tie(0);
@@ -282,11 +417,10 @@ int main() {
     freopen("input.txt", "rt", stdin);
     freopen("output.txt", "wt", stdout);
 #endif
-    Node *root;
     CompilerInfo compiler_info("inFile.txt", "otFile.txt", "deFile.txt");
 
     Token *next_token = new Token;
     GetNextToken(&compiler_info, next_token);
-
+    Node *root = stmtseqFun(&compiler_info, next_token);
     return 0;
 }
